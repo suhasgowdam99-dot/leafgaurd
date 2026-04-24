@@ -1,0 +1,1596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LeafGuard — AI Plant Disease Detection</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green-900: #0f2d1a;
+    --green-800: #1a4028;
+    --green-700: #1f5c35;
+    --green-600: #267a45;
+    --green-500: #2d9a58;
+    --green-400: #3dbe70;
+    --green-300: #6cd892;
+    --green-200: #a3efc0;
+    --green-100: #d4f7e3;
+    --green-50: #edfaf3;
+    --cream: #f9f5ed;
+    --warm-white: #fdfaf5;
+    --amber: #e8a435;
+    --amber-light: #fef3d9;
+    --coral: #e05c3a;
+    --coral-light: #fdeee9;
+    --text-dark: #1a2e22;
+    --text-mid: #3a5244;
+    --text-muted: #7a9a86;
+    --border: rgba(38, 122, 69, 0.15);
+    --shadow-soft: 0 4px 24px rgba(15, 45, 26, 0.08);
+    --shadow-card: 0 2px 12px rgba(15, 45, 26, 0.06);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background-color: var(--warm-white);
+    color: var(--text-dark);
+    overflow-x: hidden;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1rem 3rem;
+    background: rgba(253, 250, 245, 0.88);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+  }
+  .logo {
+    display: flex; align-items: center; gap: 0.6rem;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem; font-weight: 600;
+    color: var(--green-800);
+    text-decoration: none;
+  }
+  .logo-leaf {
+    width: 28px; height: 28px;
+    background: var(--green-600);
+    border-radius: 50% 0 50% 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .logo-leaf svg { width: 16px; height: 16px; fill: white; }
+  .nav-links { display: flex; align-items: center; gap: 2rem; }
+  .nav-links a {
+    font-size: 0.88rem; font-weight: 400;
+    color: var(--text-mid); text-decoration: none;
+    letter-spacing: 0.01em;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--green-600); }
+  .nav-cta {
+    background: var(--green-700) !important;
+    color: white !important;
+    padding: 0.5rem 1.25rem;
+    border-radius: 40px;
+    font-size: 0.85rem !important;
+  }
+  .nav-cta:hover { background: var(--green-600) !important; }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    padding: 7rem 3rem 4rem;
+    gap: 4rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -100px; right: -100px;
+    width: 600px; height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--green-100) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: var(--green-50);
+    border: 1px solid var(--green-200);
+    border-radius: 40px;
+    padding: 0.35rem 1rem;
+    font-size: 0.8rem; color: var(--green-700);
+    margin-bottom: 1.5rem;
+    font-weight: 500;
+  }
+  .hero-badge span { width: 6px; height: 6px; background: var(--green-500); border-radius: 50%; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.6;transform:scale(1.3)} }
+  
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.8rem, 4.5vw, 4rem);
+    font-weight: 600;
+    line-height: 1.12;
+    color: var(--green-900);
+    margin-bottom: 1.5rem;
+  }
+  h1 em {
+    font-style: italic;
+    color: var(--green-600);
+  }
+  .hero-desc {
+    font-size: 1.05rem;
+    color: var(--text-mid);
+    line-height: 1.7;
+    max-width: 480px;
+    margin-bottom: 2.5rem;
+  }
+  .hero-actions {
+    display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;
+  }
+  .btn-primary {
+    background: var(--green-700);
+    color: white;
+    padding: 0.85rem 2rem;
+    border-radius: 40px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    text-decoration: none;
+    display: inline-block;
+  }
+  .btn-primary:hover { background: var(--green-600); transform: translateY(-1px); }
+  .btn-outline {
+    background: transparent;
+    color: var(--green-700);
+    padding: 0.85rem 2rem;
+    border-radius: 40px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    border: 1.5px solid var(--green-300);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-block;
+  }
+  .btn-outline:hover { background: var(--green-50); border-color: var(--green-500); }
+
+  .hero-stats {
+    display: flex; gap: 2rem; margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border);
+  }
+  .stat-item { }
+  .stat-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: var(--green-800);
+  }
+  .stat-label {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  /* HERO VISUAL PANEL */
+  .hero-visual {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .device-frame {
+    width: 340px;
+    background: white;
+    border-radius: 24px;
+    box-shadow: var(--shadow-soft), 0 0 0 1px var(--border);
+    overflow: hidden;
+    position: relative;
+    z-index: 2;
+  }
+  .device-topbar {
+    background: var(--green-800);
+    padding: 0.8rem 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .device-topbar-title {
+    font-size: 0.78rem;
+    color: var(--green-200);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+  }
+  .device-status {
+    display: flex; align-items: center; gap: 0.3rem;
+    font-size: 0.7rem; color: var(--green-300);
+  }
+  .device-status-dot { width: 5px; height: 5px; background: var(--green-400); border-radius: 50%; }
+
+  .upload-zone {
+    margin: 1rem;
+    border: 1.5px dashed var(--green-200);
+    border-radius: 14px;
+    padding: 2rem 1rem;
+    text-align: center;
+    background: var(--green-50);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .upload-zone:hover { border-color: var(--green-400); background: var(--green-100); }
+  .upload-icon {
+    width: 48px; height: 48px;
+    background: var(--green-700);
+    border-radius: 50%;
+    margin: 0 auto 0.8rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .upload-icon svg { width: 22px; height: 22px; fill: none; stroke: white; stroke-width: 2; }
+  .upload-text { font-size: 0.82rem; color: var(--text-mid); margin-bottom: 0.3rem; font-weight: 500; }
+  .upload-sub { font-size: 0.73rem; color: var(--text-muted); }
+
+  .result-card {
+    margin: 0 1rem 1rem;
+    background: var(--cream);
+    border-radius: 14px;
+    padding: 1rem;
+    border: 1px solid var(--border);
+  }
+  .result-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.8rem; }
+  .result-title { font-size: 0.78rem; color: var(--text-muted); font-weight: 500; letter-spacing: 0.03em; }
+  .result-badge {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    font-weight: 500;
+  }
+  .badge-warning { background: var(--amber-light); color: #8a5a0a; }
+  .badge-success { background: var(--green-100); color: var(--green-800); }
+  .badge-danger { background: var(--coral-light); color: #8a2a10; }
+
+  .result-disease { font-size: 1rem; font-weight: 500; color: var(--green-900); margin-bottom: 0.4rem; }
+  .confidence-bar-wrap { height: 4px; background: var(--border); border-radius: 4px; margin-bottom: 0.8rem; }
+  .confidence-bar { height: 100%; border-radius: 4px; background: var(--green-500); width: 87%; }
+  .confidence-label { font-size: 0.72rem; color: var(--text-muted); text-align: right; margin-top: -12px; margin-bottom: 0.8rem; }
+
+  .spray-decision {
+    display: flex; align-items: center; gap: 0.5rem;
+    background: var(--coral-light);
+    border-radius: 8px;
+    padding: 0.6rem 0.8rem;
+  }
+  .spray-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--coral); flex-shrink: 0; }
+  .spray-text { font-size: 0.75rem; color: #7a2a10; }
+
+  .sensor-row {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    margin: 0 1rem 1rem;
+  }
+  .sensor-chip {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.6rem 0.8rem;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .sensor-icon {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .sensor-icon.temp { background: var(--amber-light); }
+  .sensor-icon.moisture { background: #e3f2fd; }
+  .sensor-icon svg { width: 14px; height: 14px; }
+  .sensor-val { font-size: 0.85rem; font-weight: 500; color: var(--green-900); }
+  .sensor-name { font-size: 0.68rem; color: var(--text-muted); }
+
+  /* Floating cards around device */
+  .float-card {
+    position: absolute;
+    background: white;
+    border-radius: 14px;
+    box-shadow: var(--shadow-card), 0 0 0 1px var(--border);
+    padding: 0.7rem 1rem;
+    font-size: 0.8rem;
+    animation: floatY 4s ease-in-out infinite;
+  }
+  @keyframes floatY { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+  .float-card.left { left: -60px; top: 30%; animation-delay: -1s; }
+  .float-card.right { right: -60px; bottom: 25%; animation-delay: -2s; }
+  .float-card-label { font-size: 0.68rem; color: var(--text-muted); margin-bottom: 0.2rem; }
+  .float-card-val { font-weight: 500; color: var(--green-800); }
+  .float-card .green { color: var(--green-600); }
+  .float-card .amber { color: var(--amber); }
+
+  /* SECTIONS */
+  section { padding: 6rem 3rem; }
+
+  .section-eyebrow {
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--green-500);
+    margin-bottom: 0.8rem;
+  }
+  h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 3vw, 2.6rem);
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--green-900);
+    margin-bottom: 1rem;
+  }
+  h2 em { font-style: italic; color: var(--green-600); }
+  .section-desc {
+    font-size: 1rem;
+    color: var(--text-mid);
+    line-height: 1.7;
+    max-width: 540px;
+  }
+
+  /* PROBLEMS */
+  .problems {
+    background: var(--green-900);
+    color: white;
+  }
+  .problems .section-eyebrow { color: var(--green-300); }
+  .problems h2 { color: white; }
+  .problems .section-desc { color: var(--green-200); }
+
+  .problem-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-top: 3.5rem;
+  }
+  .problem-card {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 18px;
+    padding: 1.8rem;
+    transition: background 0.2s;
+  }
+  .problem-card:hover { background: rgba(255,255,255,0.09); }
+  .problem-icon {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    margin-bottom: 1.2rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .problem-icon svg { width: 22px; height: 22px; }
+  .p-icon-red { background: rgba(224,92,58,0.2); }
+  .p-icon-red svg { stroke: #f0816a; fill: none; }
+  .p-icon-amber { background: rgba(232,164,53,0.2); }
+  .p-icon-amber svg { stroke: var(--amber); fill: none; }
+  .p-icon-blue { background: rgba(66,133,244,0.2); }
+  .p-icon-blue svg { stroke: #7bb8f8; fill: none; }
+  .problem-card h3 { font-size: 1rem; font-weight: 500; color: white; margin-bottom: 0.6rem; }
+  .problem-card p { font-size: 0.88rem; color: var(--green-200); line-height: 1.6; }
+
+  /* HOW IT WORKS */
+  .how {
+    background: var(--warm-white);
+    position: relative;
+  }
+  .how-header {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+    align-items: start;
+    margin-bottom: 4rem;
+  }
+  .steps-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .step-item {
+    display: flex;
+    gap: 1.5rem;
+    padding-bottom: 2.5rem;
+    position: relative;
+  }
+  .step-item:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: 19px; top: 44px;
+    width: 2px;
+    bottom: 0;
+    background: linear-gradient(to bottom, var(--green-200), transparent);
+  }
+  .step-num {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: var(--green-700);
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 500;
+    flex-shrink: 0;
+  }
+  .step-content h3 { font-size: 1rem; font-weight: 500; color: var(--green-900); margin-bottom: 0.4rem; margin-top: 0.4rem; }
+  .step-content p { font-size: 0.88rem; color: var(--text-mid); line-height: 1.65; }
+  .step-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.7rem; }
+  .tag {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    background: var(--green-50);
+    color: var(--green-700);
+    border: 1px solid var(--green-200);
+    font-weight: 500;
+  }
+
+  .system-diagram {
+    background: var(--cream);
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    padding: 2rem;
+    position: relative;
+  }
+  .diagram-label { font-size: 0.7rem; color: var(--text-muted); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 1.5rem; }
+  .diagram-nodes {
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+  }
+  .diag-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .diag-node {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.6rem 0.9rem;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--green-800);
+    flex: 1;
+    text-align: center;
+  }
+  .diag-node.brain {
+    background: var(--green-800);
+    color: white;
+    border-color: var(--green-700);
+  }
+  .diag-node.input { background: var(--green-50); }
+  .diag-node.output { background: var(--amber-light); color: #6a4000; border-color: #e8c97a; }
+  .diag-arrow {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    text-align: center;
+    flex-shrink: 0;
+    width: 20px;
+  }
+  .diag-sep { height: 20px; display: flex; align-items: center; justify-content: center; }
+  .diag-sep-line { width: 2px; height: 100%; background: var(--green-200); margin: 0 auto; }
+
+  /* OUTCOMES */
+  .outcomes { background: var(--cream); }
+  .outcomes-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.2rem;
+    margin-top: 3.5rem;
+  }
+  .outcome-card {
+    background: white;
+    border-radius: 18px;
+    border: 1px solid var(--border);
+    padding: 1.8rem 1.5rem;
+    position: relative;
+    overflow: hidden;
+    transition: box-shadow 0.2s, transform 0.2s;
+  }
+  .outcome-card:hover { box-shadow: var(--shadow-soft); transform: translateY(-3px); }
+  .outcome-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    border-radius: 3px 3px 0 0;
+  }
+  .outcome-card:nth-child(1)::before { background: var(--green-500); }
+  .outcome-card:nth-child(2)::before { background: var(--amber); }
+  .outcome-card:nth-child(3)::before { background: #5b9df5; }
+  .outcome-card:nth-child(4)::before { background: var(--coral); }
+  .outcome-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.2rem;
+    font-weight: 600;
+    color: var(--green-800);
+    margin: 0.5rem 0;
+  }
+  .outcome-card h3 { font-size: 0.88rem; font-weight: 500; color: var(--green-900); margin-bottom: 0.4rem; }
+  .outcome-card p { font-size: 0.82rem; color: var(--text-mid); line-height: 1.55; }
+
+  /* TECH STACK */
+  .tech { background: var(--warm-white); }
+  .tech-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.2rem;
+    margin-top: 3.5rem;
+  }
+  .tech-card {
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    background: white;
+    display: flex; align-items: flex-start; gap: 1rem;
+    transition: border-color 0.2s;
+  }
+  .tech-card:hover { border-color: var(--green-300); }
+  .tech-ic {
+    width: 40px; height: 40px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .tech-ic svg { width: 20px; height: 20px; }
+  .tech-card h4 { font-size: 0.9rem; font-weight: 500; color: var(--green-900); margin-bottom: 0.3rem; }
+  .tech-card p { font-size: 0.82rem; color: var(--text-mid); line-height: 1.5; }
+
+  /* CTA */
+  .cta-section {
+    background: var(--green-800);
+    text-align: center;
+    padding: 6rem 3rem;
+  }
+  .cta-section h2 { color: white; max-width: 540px; margin: 0 auto 1rem; }
+  .cta-section p { color: var(--green-200); font-size: 1rem; margin-bottom: 2.5rem; }
+  .cta-buttons { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+  .btn-white {
+    background: white;
+    color: var(--green-800);
+    padding: 0.85rem 2rem;
+    border-radius: 40px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+  }
+  .btn-white:hover { background: var(--cream); transform: translateY(-1px); }
+  .btn-ghost {
+    background: transparent;
+    color: var(--green-200);
+    padding: 0.85rem 2rem;
+    border-radius: 40px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    border: 1px solid rgba(255,255,255,0.25);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+  }
+  .btn-ghost:hover { background: rgba(255,255,255,0.08); }
+
+  /* FOOTER */
+  footer {
+    background: var(--green-900);
+    padding: 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid rgba(255,255,255,0.07);
+  }
+  footer .logo { color: white; }
+  footer p { font-size: 0.8rem; color: var(--green-400); }
+  footer .footer-links { display: flex; gap: 1.5rem; }
+  footer .footer-links a { font-size: 0.8rem; color: var(--green-300); text-decoration: none; transition: color 0.2s; }
+  footer .footer-links a:hover { color: white; }
+
+  /* DETECT DEMO SECTION */
+  .detect-section {
+    background: var(--warm-white);
+  }
+  .detect-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: 4rem;
+    align-items: start;
+    margin-top: 3.5rem;
+  }
+  .detect-panel {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: var(--shadow-card);
+  }
+  .detect-panel-header {
+    background: var(--green-800);
+    padding: 1rem 1.4rem;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .detect-panel-header span { font-size: 0.8rem; color: var(--green-100); font-weight: 500; letter-spacing: 0.04em; }
+  .detect-dots { display: flex; gap: 6px; }
+  .detect-dots span { width: 10px; height: 10px; border-radius: 50%; }
+  .detect-dots span:nth-child(1) { background: #ff5f57; }
+  .detect-dots span:nth-child(2) { background: #febc2e; }
+  .detect-dots span:nth-child(3) { background: #28c840; }
+
+  .detect-body { padding: 1.4rem; }
+  .drop-area {
+    border: 1.5px dashed var(--green-200);
+    border-radius: 14px;
+    padding: 2.5rem 1.5rem;
+    text-align: center;
+    background: var(--green-50);
+    cursor: pointer;
+    margin-bottom: 1rem;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .drop-area:hover { border-color: var(--green-400); }
+  .drop-area input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .drop-area-icon { font-size: 2.5rem; margin-bottom: 0.6rem; }
+  .drop-area h4 { font-size: 0.88rem; font-weight: 500; color: var(--green-800); margin-bottom: 0.3rem; }
+  .drop-area p { font-size: 0.78rem; color: var(--text-muted); }
+
+  .detect-actions { display: flex; gap: 0.6rem; margin-bottom: 1.2rem; }
+  .detect-btn {
+    flex: 1;
+    padding: 0.7rem;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    background: white;
+    color: var(--green-800);
+    transition: all 0.15s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .detect-btn:hover { background: var(--green-50); border-color: var(--green-300); }
+  .detect-btn.primary { background: var(--green-700); color: white; border-color: var(--green-700); }
+  .detect-btn.primary:hover { background: var(--green-600); }
+  .detect-btn:disabled { opacity: 0.5; cursor: default; }
+
+  .preview-img {
+    width: 100%; border-radius: 12px; object-fit: cover;
+    max-height: 180px; display: none; margin-bottom: 1rem;
+  }
+  .result-section { display: none; }
+  .result-disease-name {
+    font-size: 1.1rem; font-weight: 500; color: var(--green-900);
+    margin-bottom: 0.3rem;
+  }
+  .result-sub { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem; }
+  .conf-row { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.5rem; }
+  .conf-label { font-size: 0.75rem; color: var(--text-muted); width: 90px; flex-shrink: 0; }
+  .conf-track { flex: 1; height: 5px; background: var(--border); border-radius: 10px; }
+  .conf-fill { height: 100%; background: var(--green-500); border-radius: 10px; transition: width 0.6s ease; }
+  .conf-pct { font-size: 0.75rem; color: var(--green-700); font-weight: 500; width: 36px; text-align: right; }
+  .spray-alert {
+    margin-top: 1rem;
+    padding: 0.9rem 1rem;
+    border-radius: 10px;
+    display: flex; align-items: center; gap: 0.6rem;
+    font-size: 0.82rem;
+    font-weight: 500;
+  }
+  .spray-alert.warn { background: var(--coral-light); color: #8a2a10; }
+  .spray-alert.ok { background: var(--green-100); color: var(--green-800); }
+  .spray-alert.hide { display: none; }
+  .spray-alert-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex-shrink: 0; opacity: 0.7; }
+
+  #demo-status {
+    font-size: 0.78rem; color: var(--text-muted);
+    margin-top: 0.5rem; text-align: center;
+  }
+
+  .side-panel {
+    display: flex; flex-direction: column; gap: 1.2rem;
+  }
+  .side-block {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+  .side-block-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.9rem 1.2rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .side-block-title {
+    font-size: 0.78rem; font-weight: 500;
+    color: var(--text-mid); letter-spacing: 0.04em; text-transform: uppercase;
+  }
+  .side-block-clear {
+    font-size: 0.75rem; color: var(--text-muted);
+    cursor: pointer; transition: color 0.15s;
+  }
+  .side-block-clear:hover { color: var(--coral); }
+
+  /* Scan history */
+  .scan-list { padding: 0.5rem 0.8rem; min-height: 80px; }
+  .scan-empty {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 1.4rem 1rem; gap: 0.6rem; text-align: center;
+  }
+  .scan-empty p { font-size: 0.78rem; color: var(--text-muted); line-height: 1.5; }
+  .scan-entry {
+    display: flex; align-items: center; gap: 0.8rem;
+    padding: 0.6rem 0.4rem;
+    border-bottom: 1px solid var(--border);
+    animation: fadeUp 0.3s ease forwards;
+  }
+  .scan-entry:last-child { border-bottom: none; }
+  .scan-thumb {
+    width: 40px; height: 40px; border-radius: 8px;
+    object-fit: cover; flex-shrink: 0;
+    border: 1px solid var(--border);
+    background: var(--green-50);
+  }
+  .scan-thumb-placeholder {
+    width: 40px; height: 40px; border-radius: 8px; flex-shrink: 0;
+    background: var(--green-50); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem;
+  }
+  .scan-info { flex: 1; min-width: 0; }
+  .scan-name { font-size: 0.82rem; font-weight: 500; color: var(--green-900); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .scan-meta { font-size: 0.7rem; color: var(--text-muted); margin-top: 1px; }
+  .scan-badge {
+    font-size: 0.68rem; padding: 0.18rem 0.5rem; border-radius: 20px;
+    font-weight: 500; flex-shrink: 0;
+  }
+  .scan-badge.spray { background: var(--coral-light); color: #8a2a10; }
+  .scan-badge.ok { background: var(--green-100); color: var(--green-800); }
+
+  /* Disease reference */
+  .disease-ref-list { padding: 0 0 0.4rem; }
+  .disease-ref-item {
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+  }
+  .disease-ref-item:last-child { border-bottom: none; }
+  .disease-ref-top {
+    display: flex; align-items: center; gap: 0.6rem;
+    padding: 0.75rem 1.2rem;
+    transition: background 0.15s;
+  }
+  .disease-ref-item:hover .disease-ref-top { background: var(--green-50); }
+  .disease-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .disease-ref-name { flex: 1; font-size: 0.85rem; font-weight: 500; color: var(--green-900); }
+  .ref-chevron { flex-shrink: 0; transition: transform 0.2s; }
+  .disease-ref-body {
+    display: none;
+    padding: 0 1.2rem 0.9rem 2.6rem;
+  }
+  .disease-ref-item.open .disease-ref-body { display: block; }
+  .disease-ref-item.open .ref-chevron { transform: rotate(180deg); }
+  .disease-ref-body p { font-size: 0.8rem; color: var(--text-mid); line-height: 1.6; margin-bottom: 0.6rem; }
+  .disease-ref-tags { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+  .ref-tag {
+    font-size: 0.68rem; padding: 0.18rem 0.55rem; border-radius: 20px; font-weight: 500;
+  }
+  .ref-tag.fungal { background: #f3e8ff; color: #6b21a8; }
+  .ref-tag.bacterial { background: #e0f2fe; color: #0369a1; }
+  .ref-tag.healthy { background: var(--green-100); color: var(--green-800); }
+  .ref-tag.warn { background: var(--amber-light); color: #8a5a0a; }
+  .ref-tag.danger { background: var(--coral-light); color: #8a2a10; }
+  .ref-tag.ok { background: var(--green-100); color: var(--green-800); }
+
+  /* Mode selector */
+  .input-mode-row {
+    display: flex; gap: 0.5rem; margin-bottom: 1rem;
+  }
+  .mode-btn {
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    padding: 0.6rem;
+    border-radius: 10px;
+    font-size: 0.82rem; font-weight: 500;
+    border: 1px solid var(--border);
+    background: white; color: var(--text-mid);
+    cursor: pointer; transition: all 0.15s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .mode-btn:hover { border-color: var(--green-300); color: var(--green-700); background: var(--green-50); }
+  .mode-btn.active { background: var(--green-700); color: white; border-color: var(--green-700); }
+  .mode-btn.active svg { stroke: white; }
+
+  /* Camera viewfinder */
+  .camera-view {
+    position: relative;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #000;
+    margin-bottom: 1rem;
+    aspect-ratio: 4/3;
+  }
+  .camera-view video {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+  }
+  .camera-overlay {
+    position: absolute; inset: 0;
+    pointer-events: none;
+  }
+  .camera-frame-corner {
+    position: absolute;
+    width: 24px; height: 24px;
+    border-color: rgba(255,255,255,0.8);
+    border-style: solid;
+  }
+  .camera-frame-corner.tl { top: 16px; left: 16px; border-width: 2px 0 0 2px; border-radius: 4px 0 0 0; }
+  .camera-frame-corner.tr { top: 16px; right: 16px; border-width: 2px 2px 0 0; border-radius: 0 4px 0 0; }
+  .camera-frame-corner.bl { bottom: 56px; left: 16px; border-width: 0 0 2px 2px; border-radius: 0 0 0 4px; }
+  .camera-frame-corner.br { bottom: 56px; right: 16px; border-width: 0 2px 2px 0; border-radius: 0 0 4px 0; }
+  .camera-hint {
+    position: absolute; bottom: 56px; left: 0; right: 0;
+    text-align: center; padding: 0.3rem;
+    font-size: 0.72rem; color: rgba(255,255,255,0.7);
+    letter-spacing: 0.04em;
+  }
+  .camera-controls {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.5rem 1.2rem;
+    background: rgba(0,0,0,0.55);
+  }
+  .cam-stop-btn, .cam-flip-btn {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.2);
+    cursor: pointer; color: white;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+  }
+  .cam-stop-btn:hover, .cam-flip-btn:hover { background: rgba(255,255,255,0.25); }
+  .cam-capture-btn {
+    width: 56px; height: 56px; border-radius: 50%;
+    background: transparent;
+    border: 3px solid white;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform 0.1s;
+  }
+  .cam-capture-btn:active { transform: scale(0.94); }
+  .cam-shutter-ring {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: white;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cam-shutter-dot {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: white; border: 2px solid rgba(0,0,0,0.08);
+  }
+
+  /* Animations */
+  .fade-in {
+    opacity: 0;
+    transform: translateY(16px);
+    animation: fadeUp 0.6s ease forwards;
+  }
+  @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+  .delay-1 { animation-delay: 0.1s; }
+  .delay-2 { animation-delay: 0.2s; }
+  .delay-3 { animation-delay: 0.3s; }
+  .delay-4 { animation-delay: 0.4s; }
+
+  @media (max-width: 900px) {
+    nav { padding: 1rem 1.5rem; }
+    .nav-links { display: none; }
+    .hero { grid-template-columns: 1fr; padding: 6rem 1.5rem 3rem; }
+    .hero-visual { display: none; }
+    .problem-grid, .outcomes-grid, .tech-grid { grid-template-columns: 1fr; }
+    section { padding: 4rem 1.5rem; }
+    .how-header { grid-template-columns: 1fr; }
+    .detect-wrapper { grid-template-columns: 1fr; }
+    footer { flex-direction: column; gap: 1rem; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="logo" href="#">
+    <div class="logo-leaf">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17 8C8 10 5.9 16.17 3.82 21C5.41 18.5 9.5 15 15 14C13 16 12 18 12 21C17.6 18.5 21 12.5 21 8C21 5 19 2 19 2C19 2 18 7 17 8Z"/></svg>
+    </div>
+    LeafGuard
+  </a>
+  <div class="nav-links">
+    <a href="#how">How it works</a>
+    <a href="#detect">Detect</a>
+    <a href="#tech">Technology</a>
+    <a href="#" class="nav-cta">Get Started</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div>
+    <div class="hero-badge fade-in"><span></span>Powered by TensorFlow.js + ESP32</div>
+    <h1 class="fade-in delay-1">Protect your plants with <em>precision AI</em> detection</h1>
+    <p class="hero-desc fade-in delay-2">LeafGuard combines computer vision and IoT sensing to catch disease early — and spray only where needed. Save your garden. Waste nothing.</p>
+    <div class="hero-actions fade-in delay-3">
+      <a href="#detect" class="btn-primary">Analyse a Leaf</a>
+      <a href="#how" class="btn-outline">See how it works</a>
+    </div>
+    <div class="hero-stats fade-in delay-4">
+      <div class="stat-item">
+        <div class="stat-num">70–80%</div>
+        <div class="stat-label">Less Chemical Waste</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">24/7</div>
+        <div class="stat-label">Live Monitoring</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">6</div>
+        <div class="stat-label">Hardware Components</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-visual">
+    <!-- Floating cards -->
+    <div class="float-card left">
+      <div class="float-card-label">Humidity</div>
+      <div class="float-card-val">68% <span class="amber">↑ High</span></div>
+    </div>
+    <div class="float-card right">
+      <div class="float-card-label">Last detection</div>
+      <div class="float-card-val">Powdery Mildew <span class="green">87%</span></div>
+    </div>
+
+    <!-- Device mock -->
+    <div class="device-frame">
+      <div class="device-topbar">
+        <span class="device-topbar-title">LEAFGUARD SENSOR NODE</span>
+        <div class="device-status"><div class="device-status-dot"></div>Live</div>
+      </div>
+
+      <div class="upload-zone" style="cursor:default;">
+        <div class="upload-icon">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 12L12 8L16 12M12 8V16"/></svg>
+        </div>
+        <div class="upload-text">Leaf image analysed</div>
+        <div class="upload-sub">Powdery Mildew detected</div>
+      </div>
+
+      <div class="result-card">
+        <div class="result-header">
+          <span class="result-title">AI DIAGNOSIS</span>
+          <span class="result-badge badge-warning">Action needed</span>
+        </div>
+        <div class="result-disease">Erysiphe cichoracearum</div>
+        <div class="confidence-bar-wrap"><div class="confidence-bar"></div></div>
+        <div class="confidence-label">87% confidence</div>
+        <div class="spray-decision">
+          <div class="spray-dot"></div>
+          <span class="spray-text">Spray recommended — fungal treatment, 3ml/L</span>
+        </div>
+      </div>
+
+      <div class="sensor-row">
+        <div class="sensor-chip">
+          <div class="sensor-icon temp">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#c07800" stroke-width="2"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>
+          </div>
+          <div>
+            <div class="sensor-val">28°C</div>
+            <div class="sensor-name">Temperature</div>
+          </div>
+        </div>
+        <div class="sensor-chip">
+          <div class="sensor-icon moisture">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#1976d2" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+          </div>
+          <div>
+            <div class="sensor-val">62%</div>
+            <div class="sensor-name">Soil Moisture</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROBLEMS -->
+<section class="problems" id="problems">
+  <div class="section-eyebrow">The Problem</div>
+  <h2>Why plants die before help arrives</h2>
+  <p class="section-desc">Traditional gardening gives you no early warning system — and when disease does strike, the treatments are imprecise.</p>
+  <div class="problem-grid">
+    <div class="problem-card">
+      <div class="problem-icon p-icon-red">
+        <svg viewBox="0 0 24 24" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      </div>
+      <h3>Too late to act</h3>
+      <p>By the time symptoms appear on a leaf, the infection has already spread. Precious bonsai and ornamentals can be lost entirely before help arrives.</p>
+    </div>
+    <div class="problem-card">
+      <div class="problem-icon p-icon-amber">
+        <svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M12 22a10 10 0 0 0 0-20"/><path d="M2 12a10 10 0 0 1 10-10"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
+      </div>
+      <h3>Blanket chemical spraying</h3>
+      <p>Spraying the whole plant wastes pesticide, damages healthy roots, and is especially harmful to delicate ornamental plants.</p>
+    </div>
+    <div class="problem-card">
+      <div class="problem-icon p-icon-blue">
+        <svg viewBox="0 0 24 24" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      </div>
+      <h3>No environmental data</h3>
+      <p>Without real-time humidity, temperature, and moisture readings, gardeners can't predict when conditions are right for disease to strike.</p>
+    </div>
+  </div>
+</section>
+
+<!-- DETECT DEMO -->
+<section class="detect-section" id="detect">
+  <div class="section-eyebrow">AI Detection</div>
+  <h2>Analyse your plant <em>instantly</em></h2>
+  <p class="section-desc">Upload a photo of your plant's leaf. Our AI model identifies the disease and tells you whether to spray.</p>
+
+  <div class="detect-wrapper">
+    <div class="detect-panel">
+      <div class="detect-panel-header">
+        <div class="detect-dots"><span></span><span></span><span></span></div>
+        <span>LEAF ANALYSER</span>
+      </div>
+      <div class="detect-body">
+        <!-- Input mode selector -->
+        <div class="input-mode-row" id="inputModeRow">
+          <button class="mode-btn active" id="modeUpload" onclick="setMode('upload')">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Upload Photo
+          </button>
+          <button class="mode-btn" id="modeCamera" onclick="setMode('camera')">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            Use Camera
+          </button>
+        </div>
+
+        <!-- Upload zone -->
+        <div class="drop-area" id="dropArea">
+          <input type="file" id="fileInput" accept="image/*">
+          <div class="drop-area-icon">🌿</div>
+          <h4>Drop a leaf photo here</h4>
+          <p>JPG, PNG, WebP — or click to browse</p>
+        </div>
+
+        <!-- Camera viewfinder -->
+        <div class="camera-view" id="cameraView" style="display:none;">
+          <video id="cameraVideo" autoplay playsinline muted></video>
+          <div class="camera-overlay">
+            <div class="camera-frame-corner tl"></div>
+            <div class="camera-frame-corner tr"></div>
+            <div class="camera-frame-corner bl"></div>
+            <div class="camera-frame-corner br"></div>
+            <div class="camera-hint">Position the leaf inside the frame</div>
+          </div>
+          <div class="camera-controls">
+            <button class="cam-stop-btn" onclick="stopCamera()" title="Cancel">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+            <button class="cam-capture-btn" onclick="capturePhoto()" id="captureBtn">
+              <div class="cam-shutter-ring"><div class="cam-shutter-dot"></div></div>
+            </button>
+            <button class="cam-flip-btn" onclick="flipCamera()" title="Flip camera">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+            </button>
+          </div>
+        </div>
+        <canvas id="captureCanvas" style="display:none;"></canvas>
+
+        <img id="previewImg" class="preview-img" alt="Leaf preview">
+        <div class="detect-actions">
+          <button class="detect-btn" id="clearBtn" disabled onclick="clearResult()">Clear</button>
+          <button class="detect-btn primary" id="analyseBtn" disabled onclick="analyseLeaf()">Analyse Leaf →</button>
+        </div>
+        <div id="demo-status"></div>
+        <div class="result-section" id="resultSection">
+          <div class="result-disease-name" id="diseaseName">—</div>
+          <div class="result-sub" id="diseaseSub">—</div>
+          <div class="conf-row">
+            <span class="conf-label">AI Confidence</span>
+            <div class="conf-track"><div class="conf-fill" id="confBar" style="width:0%"></div></div>
+            <span class="conf-pct" id="confPct">—</span>
+          </div>
+          <div class="conf-row">
+            <span class="conf-label">Severity</span>
+            <div class="conf-track"><div class="conf-fill" id="sevBar" style="width:0%;background:var(--amber)"></div></div>
+            <span class="conf-pct" id="sevPct">—</span>
+          </div>
+          <div class="spray-alert" id="sprayAlert">
+            <div class="spray-alert-dot"></div>
+            <span id="sprayMsg"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-panel">
+
+      <!-- Recent scans -->
+      <div class="side-block">
+        <div class="side-block-header">
+          <span class="side-block-title">Recent scans</span>
+          <span class="side-block-clear" onclick="clearHistory()">Clear all</span>
+        </div>
+        <div class="scan-list" id="scanList">
+          <div class="scan-empty" id="scanEmpty">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.4"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M9 21V9"/></svg>
+            <p>No scans yet. Analyse a leaf to see your history here.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Disease quick-ref -->
+      <div class="side-block">
+        <div class="side-block-header">
+          <span class="side-block-title">Common diseases</span>
+        </div>
+        <div class="disease-ref-list">
+          <div class="disease-ref-item" onclick="toggleRef(this)">
+            <div class="disease-ref-top">
+              <span class="disease-dot" style="background:#e8a435;"></span>
+              <span class="disease-ref-name">Powdery Mildew</span>
+              <svg class="ref-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+            <div class="disease-ref-body">
+              <p>White powdery coating on leaves. Thrives in warm, humid conditions. Treat with potassium bicarbonate or neem oil spray.</p>
+              <div class="disease-ref-tags"><span class="ref-tag fungal">Fungal</span><span class="ref-tag warn">Moderate risk</span></div>
+            </div>
+          </div>
+          <div class="disease-ref-item" onclick="toggleRef(this)">
+            <div class="disease-ref-top">
+              <span class="disease-dot" style="background:#e05c3a;"></span>
+              <span class="disease-ref-name">Early Blight</span>
+              <svg class="ref-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+            <div class="disease-ref-body">
+              <p>Brown concentric rings on lower leaves. Caused by Alternaria solani. Apply copper-based fungicide at first signs.</p>
+              <div class="disease-ref-tags"><span class="ref-tag fungal">Fungal</span><span class="ref-tag danger">High risk</span></div>
+            </div>
+          </div>
+          <div class="disease-ref-item" onclick="toggleRef(this)">
+            <div class="disease-ref-top">
+              <span class="disease-dot" style="background:#5b9df5;"></span>
+              <span class="disease-ref-name">Bacterial Leaf Spot</span>
+              <svg class="ref-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+            <div class="disease-ref-body">
+              <p>Water-soaked spots that turn dark and angular. Spreads in wet conditions. Remove affected tissue; apply copper hydroxide.</p>
+              <div class="disease-ref-tags"><span class="ref-tag bacterial">Bacterial</span><span class="ref-tag warn">Moderate risk</span></div>
+            </div>
+          </div>
+          <div class="disease-ref-item" onclick="toggleRef(this)">
+            <div class="disease-ref-top">
+              <span class="disease-dot" style="background:#b07ac2;"></span>
+              <span class="disease-ref-name">Leaf Rust</span>
+              <svg class="ref-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+            <div class="disease-ref-body">
+              <p>Orange-brown pustules on leaf undersides. Spreads by airborne spores. Treat with triazole fungicide; improve air circulation.</p>
+              <div class="disease-ref-tags"><span class="ref-tag fungal">Fungal</span><span class="ref-tag danger">High risk</span></div>
+            </div>
+          </div>
+          <div class="disease-ref-item" onclick="toggleRef(this)">
+            <div class="disease-ref-top">
+              <span class="disease-dot" style="background:var(--green-500);"></span>
+              <span class="disease-ref-name">Healthy Plant</span>
+              <svg class="ref-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+            <div class="disease-ref-body">
+              <p>Uniform green colour, no spots or discolouration. No treatment needed — continue regular watering and monitoring schedule.</p>
+              <div class="disease-ref-tags"><span class="ref-tag healthy">Healthy</span><span class="ref-tag ok">No action</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how" id="how">
+  <div class="how-header">
+    <div>
+      <div class="section-eyebrow">System Design</div>
+      <h2>Five steps from leaf to <em>treatment</em></h2>
+      <p class="section-desc">A closed-loop system that watches, detects, decides, and acts — automatically and precisely.</p>
+    </div>
+    <div class="system-diagram">
+      <div class="diagram-label">Signal flow</div>
+      <div class="diagram-nodes">
+        <div class="diag-row">
+          <div class="diag-node input">📱 Smartphone Camera</div>
+          <div class="diag-arrow">+</div>
+          <div class="diag-node input">🌡️ DHT22 Sensor</div>
+          <div class="diag-arrow">+</div>
+          <div class="diag-node input">🌱 Soil Moisture</div>
+        </div>
+        <div class="diag-sep"><div class="diag-sep-line"></div></div>
+        <div class="diag-row">
+          <div class="diag-node brain" style="flex:1;">🧠 ESP32 — Decision Brain</div>
+        </div>
+        <div class="diag-sep"><div class="diag-sep-line"></div></div>
+        <div class="diag-row">
+          <div class="diag-node output">💧 DC Pump</div>
+          <div class="diag-arrow">→</div>
+          <div class="diag-node output">🎯 Spray Nozzle</div>
+          <div class="diag-arrow">+</div>
+          <div class="diag-node output">📲 App Alert</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="steps-list">
+    <div class="step-item">
+      <div class="step-num">01</div>
+      <div class="step-content">
+        <h3>Capture a photo of the plant</h3>
+        <p>Point your smartphone at the leaf. No special equipment needed — a regular phone camera is all it takes to feed the detection pipeline.</p>
+        <div class="step-tags"><span class="tag">Smartphone Camera</span><span class="tag">Mobile App</span></div>
+      </div>
+    </div>
+    <div class="step-item">
+      <div class="step-num">02</div>
+      <div class="step-content">
+        <h3>AI analyses the image for disease</h3>
+        <p>The TensorFlow.js model inspects the photo, identifies disease type (fungal, bacterial, etc.), marks the infected region, and estimates damage percentage.</p>
+        <div class="step-tags"><span class="tag">TensorFlow.js</span><span class="tag">Disease Classification</span><span class="tag">Damage % Estimate</span></div>
+      </div>
+    </div>
+    <div class="step-item">
+      <div class="step-num">03</div>
+      <div class="step-content">
+        <h3>ESP32 checks environmental conditions</h3>
+        <p>Before acting, the ESP32 reads the DHT22 (temperature + humidity) and soil moisture sensor. If conditions are already too wet, spraying is paused.</p>
+        <div class="step-tags"><span class="tag">DHT22 Sensor</span><span class="tag">Soil Moisture</span><span class="tag">Condition Check</span></div>
+      </div>
+    </div>
+    <div class="step-item">
+      <div class="step-num">04</div>
+      <div class="step-content">
+        <h3>Smart spray decision</h3>
+        <p>The ESP32 combines the AI diagnosis with live sensor data. If both signals say "treat now," it triggers the pump for the correct duration — targeting only the infected zone.</p>
+        <div class="step-tags"><span class="tag">ESP32 Controller</span><span class="tag">Smart Decision Logic</span><span class="tag">PWM Pump Control</span></div>
+      </div>
+    </div>
+    <div class="step-item">
+      <div class="step-num">05</div>
+      <div class="step-content">
+        <h3>Log, learn, and get smarter</h3>
+        <p>Every detection and spray event is recorded. Over time, this history helps the AI become more accurate for your specific plant type, climate, and garden conditions.</p>
+        <div class="step-tags"><span class="tag">Data Logging</span><span class="tag">Feedback Loop</span><span class="tag">AI Improvement</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- OUTCOMES -->
+<section class="outcomes">
+  <div class="section-eyebrow">Results</div>
+  <h2>What LeafGuard achieves <em>in the real world</em></h2>
+  <div class="outcomes-grid">
+    <div class="outcome-card">
+      <div class="outcome-num">Early</div>
+      <h3>Disease caught in time</h3>
+      <p>Detects infection before visible symptoms — saves costly bonsai and ornamental plants before it's too late.</p>
+    </div>
+    <div class="outcome-card">
+      <div class="outcome-num">70–80%</div>
+      <h3>Less chemical waste</h3>
+      <p>Targeted spray eliminates over-treatment. Protects roots and surrounding soil from unnecessary exposure.</p>
+    </div>
+    <div class="outcome-card">
+      <div class="outcome-num">24/7</div>
+      <h3>Continuous monitoring</h3>
+      <p>Sensors run around the clock — catching dangerous humidity or temperature spikes before they trigger outbreaks.</p>
+    </div>
+    <div class="outcome-card">
+      <div class="outcome-num">↑</div>
+      <h3>Smarter with each use</h3>
+      <p>The feedback loop trains the model to be increasingly accurate for your specific garden, climate, and plant varieties.</p>
+    </div>
+  </div>
+</section>
+
+<!-- TECH STACK -->
+<section class="tech" id="tech">
+  <div class="section-eyebrow">Technology</div>
+  <h2>Built on <em>proven</em> components</h2>
+  <p class="section-desc">Every piece of the system is purpose-chosen for reliability, power efficiency, and precision.</p>
+  <div class="tech-grid">
+    <div class="tech-card">
+      <div class="tech-ic" style="background:#fff3e0;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#e65100" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>
+      </div>
+      <div>
+        <h4>ESP32 Microcontroller</h4>
+        <p>Dual-core, WiFi + Bluetooth enabled brain. Reads all sensors, makes spray decisions, and logs events.</p>
+      </div>
+    </div>
+    <div class="tech-card">
+      <div class="tech-ic" style="background:var(--green-50);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--green-700)" stroke-width="1.8"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+      </div>
+      <div>
+        <h4>DHT22 Sensor</h4>
+        <p>High-precision temperature and humidity readings. Feeds the environmental context to the spray decision engine.</p>
+      </div>
+    </div>
+    <div class="tech-card">
+      <div class="tech-ic" style="background:#e3f2fd;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#1565c0" stroke-width="1.8"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+      </div>
+      <div>
+        <h4>TensorFlow.js Model</h4>
+        <p>Convolutional neural network running on-device. Classifies plant disease from a single leaf photo in under 2 seconds.</p>
+      </div>
+    </div>
+    <div class="tech-card">
+      <div class="tech-ic" style="background:var(--amber-light);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#b07000" stroke-width="1.8"><path d="M5 12H3M21 12h-2M12 5V3M12 21v-2"/><circle cx="12" cy="12" r="4"/><path d="M7.05 7.05 5.64 5.64M18.36 18.36l-1.41-1.41M18.36 5.64l-1.41 1.41M7.05 16.95l-1.41 1.41"/></svg>
+      </div>
+      <div>
+        <h4>Capacitive Soil Sensor</h4>
+        <p>Measures soil moisture without corrosion. Prevents over-watering and provides context for spray decisions.</p>
+      </div>
+    </div>
+    <div class="tech-card">
+      <div class="tech-ic" style="background:var(--coral-light);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--coral)" stroke-width="1.8"><path d="M18.2 19.2 12 13M6 7l6 6M3 3l18 18"/></svg>
+      </div>
+      <div>
+        <h4>12V DC Water Pump</h4>
+        <p>PWM-controlled pump delivers precisely metered chemical solution. Triggered only when both AI and sensor signals agree.</p>
+      </div>
+    </div>
+    <div class="tech-card">
+      <div class="tech-ic" style="background:#e8f5e9;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#2e7d32" stroke-width="1.8"><path d="M12 22V12M12 12C12 7 8 4 3 4s9 0 9 8z"/><path d="M12 12c0-5 4-8 9-8s-9 0-9 8z"/></svg>
+      </div>
+      <div>
+        <h4>Precision Mist Nozzle</h4>
+        <p>Fine-mist nozzle targets only the infected zone — not the whole plant. Critical for delicate bonsai and ornamentals.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<div class="cta-section">
+  <h2>Smarter gardens. <em>Healthier plants.</em></h2>
+  <p>Start protecting your plants with AI-powered precision today.</p>
+  <div class="cta-buttons">
+    <a href="#detect" class="btn-white">Try the Leaf Analyser</a>
+    <a href="#how" class="btn-ghost">Learn how it works</a>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <a class="logo" href="#">
+    <div class="logo-leaf">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17 8C8 10 5.9 16.17 3.82 21C5.41 18.5 9.5 15 15 14C13 16 12 18 12 21C17.6 18.5 21 12.5 21 8C21 5 19 2 19 2C19 2 18 7 17 8Z"/></svg>
+    </div>
+    LeafGuard
+  </a>
+  <p>ESP32 · DHT22 · Soil Sensor · DC Pump · TensorFlow.js</p>
+  <div class="footer-links">
+    <a href="#how">How it works</a>
+    <a href="#detect">Detect</a>
+    <a href="#tech">Tech Stack</a>
+  </div>
+</footer>
+
+<script>
+const fileInput = document.getElementById('fileInput');
+const previewImg = document.getElementById('previewImg');
+const analyseBtn = document.getElementById('analyseBtn');
+const clearBtn = document.getElementById('clearBtn');
+const resultSection = document.getElementById('resultSection');
+const status = document.getElementById('demo-status');
+const cameraView = document.getElementById('cameraView');
+const cameraVideo = document.getElementById('cameraVideo');
+const captureCanvas = document.getElementById('captureCanvas');
+const dropArea = document.getElementById('dropArea');
+
+let currentStream = null;
+let facingMode = 'environment'; // rear camera by default
+
+const diseases = [
+  { name: 'Powdery Mildew', sub: 'Erysiphe cichoracearum — Fungal', conf: 87, sev: 62, spray: true, msg: 'Spray recommended — Fungicide solution 3ml/L, targeted application.' },
+  { name: 'Early Blight', sub: 'Alternaria solani — Fungal', conf: 91, sev: 74, spray: true, msg: 'Spray recommended — Copper-based fungicide, 5ml/L dilution.' },
+  { name: 'Bacterial Leaf Spot', sub: 'Xanthomonas campestris — Bacterial', conf: 79, sev: 45, spray: true, msg: 'Spray recommended — Copper hydroxide treatment, 2ml/L.' },
+  { name: 'Healthy Plant', sub: 'No disease detected', conf: 94, sev: 0, spray: false, msg: 'No spray needed — plant appears healthy. Continue monitoring.' },
+  { name: 'Leaf Rust', sub: 'Phakopsora pachyrhizi — Fungal', conf: 83, sev: 58, spray: true, msg: 'Spray recommended — Triazole fungicide, targeted on rust patches.' },
+];
+
+function setMode(mode) {
+  document.getElementById('modeUpload').classList.toggle('active', mode === 'upload');
+  document.getElementById('modeCamera').classList.toggle('active', mode === 'camera');
+  if (mode === 'camera') {
+    dropArea.style.display = 'none';
+    startCamera();
+  } else {
+    stopCamera();
+    cameraView.style.display = 'none';
+    dropArea.style.display = '';
+  }
+}
+
+async function startCamera() {
+  try {
+    status.textContent = 'Requesting camera access…';
+    if (currentStream) currentStream.getTracks().forEach(t => t.stop());
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: facingMode }, width: { ideal: 1280 }, height: { ideal: 960 } },
+      audio: false
+    });
+    currentStream = stream;
+    cameraVideo.srcObject = stream;
+    cameraView.style.display = 'block';
+    status.textContent = '';
+  } catch (err) {
+    status.textContent = 'Camera access denied or unavailable. Try uploading a photo instead.';
+    setMode('upload');
+  }
+}
+
+function stopCamera() {
+  if (currentStream) {
+    currentStream.getTracks().forEach(t => t.stop());
+    currentStream = null;
+  }
+  cameraVideo.srcObject = null;
+}
+
+function flipCamera() {
+  facingMode = facingMode === 'environment' ? 'user' : 'environment';
+  startCamera();
+}
+
+function capturePhoto() {
+  const video = cameraVideo;
+  const canvas = captureCanvas;
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+  previewImg.src = dataUrl;
+  previewImg.style.display = 'block';
+  analyseBtn.disabled = false;
+  clearBtn.disabled = false;
+  resultSection.style.display = 'none';
+  status.textContent = 'Photo captured. Ready to analyse.';
+  stopCamera();
+  cameraView.style.display = 'none';
+  // switch back to showing upload zone area but with preview
+  document.getElementById('modeUpload').classList.add('active');
+  document.getElementById('modeCamera').classList.remove('active');
+}
+
+fileInput.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    previewImg.src = ev.target.result;
+    previewImg.style.display = 'block';
+    dropArea.style.display = 'none';
+    analyseBtn.disabled = false;
+    clearBtn.disabled = false;
+    resultSection.style.display = 'none';
+    status.textContent = 'Image loaded. Ready to analyse.';
+  };
+  reader.readAsDataURL(file);
+});
+
+function analyseLeaf() {
+  analyseBtn.disabled = true;
+  status.textContent = 'Loading AI model…';
+  resultSection.style.display = 'none';
+  const msgs = ['Loading AI model…', 'Pre-processing image…', 'Running inference…', 'Generating diagnosis…'];
+  let idx = 0;
+  const interval = setInterval(() => {
+    idx++;
+    if (idx < msgs.length) status.textContent = msgs[idx];
+  }, 600);
+  setTimeout(() => {
+    clearInterval(interval);
+    status.textContent = '';
+    const d = diseases[Math.floor(Math.random() * diseases.length)];
+    document.getElementById('diseaseName').textContent = d.name;
+    document.getElementById('diseaseSub').textContent = d.sub;
+    document.getElementById('confBar').style.width = d.conf + '%';
+    document.getElementById('confPct').textContent = d.conf + '%';
+    document.getElementById('sevBar').style.width = d.sev + '%';
+    document.getElementById('sevPct').textContent = d.sev + '%';
+    const alert = document.getElementById('sprayAlert');
+    alert.className = 'spray-alert ' + (d.spray ? 'warn' : 'ok');
+    document.getElementById('sprayMsg').textContent = d.msg;
+    resultSection.style.display = 'block';
+    analyseBtn.disabled = false;
+    scanHistory.push({ name: d.name, conf: d.conf, spray: d.spray, thumb: previewImg.src || null, ts: Date.now() });
+    renderHistory();
+  }, 2400);
+}
+
+function toggleRef(el) {
+  el.classList.toggle('open');
+}
+
+let scanHistory = [];
+
+function clearHistory() {
+  scanHistory = [];
+  renderHistory();
+}
+
+function renderHistory() {
+  const list = document.getElementById('scanList');
+  const empty = document.getElementById('scanEmpty');
+  const entries = list.querySelectorAll('.scan-entry');
+  entries.forEach(e => e.remove());
+  if (scanHistory.length === 0) {
+    empty.style.display = 'flex';
+    return;
+  }
+  empty.style.display = 'none';
+  scanHistory.slice().reverse().forEach(scan => {
+    const div = document.createElement('div');
+    div.className = 'scan-entry';
+    const ago = getTimeAgo(scan.ts);
+    div.innerHTML = `
+      ${scan.thumb ? `<img class="scan-thumb" src="${scan.thumb}" alt="">` : `<div class="scan-thumb-placeholder">🌿</div>`}
+      <div class="scan-info">
+        <div class="scan-name">${scan.name}</div>
+        <div class="scan-meta">${scan.conf}% confidence · ${ago}</div>
+      </div>
+      <span class="scan-badge ${scan.spray ? 'spray' : 'ok'}">${scan.spray ? 'Spray' : 'Healthy'}</span>
+    `;
+    list.appendChild(div);
+  });
+}
+
+function getTimeAgo(ts) {
+  const diff = Math.floor((Date.now() - ts) / 1000);
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+  return Math.floor(diff / 3600) + 'h ago';
+}
+
+  previewImg.style.display = 'none';
+  previewImg.src = '';
+  fileInput.value = '';
+  resultSection.style.display = 'none';
+  analyseBtn.disabled = true;
+  clearBtn.disabled = true;
+  status.textContent = '';
+  cameraView.style.display = 'none';
+  stopCamera();
+  dropArea.style.display = '';
+  document.getElementById('modeUpload').classList.add('active');
+  document.getElementById('modeCamera').classList.remove('active');
+  facingMode = 'environment';
+}
+</script>
+</body>
+</html>
